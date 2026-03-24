@@ -1,0 +1,8 @@
+{
+  "name": "dev-permissions",
+  "description": "Quick-setup Bash permission levels (readonly / localdev / fulldev) for Claude Code projects",
+  "author": {
+    "name": "Kang Chen",
+    "email": "chenkangcs@foxmail.com"
+  }
+}
