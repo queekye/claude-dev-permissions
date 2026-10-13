@@ -1,41 +1,91 @@
 # claude-dev-permissions
 
-A Claude Code plugin that provides quick-setup permission levels for development workflows.
+Explicit, reviewable permission profiles for Claude Code projects. These are
+workflow defaults, not a sandbox or a guarantee about arbitrary shell code.
 
-## Install
+## Load the plugin
+
+Install Python 3.8+ and Claude Code, then load the local plugin folder:
 
 ```bash
-# Clone the repo
-git clone https://github.com/YOUR_USERNAME/claude-dev-permissions.git ~/.claude/plugins/claude-dev-permissions
-
-# Or install via Claude Code
-/install-plugin ~/.claude/plugins/claude-dev-permissions
+git clone https://github.com/queekye/claude-dev-permissions.git
+claude --plugin-dir ./claude-dev-permissions
 ```
 
-## Usage
+In that session, run `/dev-permissions:setup-permissions readonly`, `localdev`,
+or `fulldev`. Without an argument, the command asks which profile to apply.
+Local folder loading is documented in [Claude Code plugins](https://code.claude.com/docs/en/plugins).
+No marketplace or account credential is bundled with this project.
 
-```
-/setup-permissions              # Interactive: shows comparison table, asks you to choose
-/setup-permissions readonly     # Level 1: read-only browsing
-/setup-permissions localdev     # Level 2: local development (recommended)
-/setup-permissions fulldev      # Level 3: full development with remote ops
+You can apply a profile directly without invoking an AI:
+
+```bash
+# From the project to configure, replace the script path.
+python /path/to/claude-dev-permissions/scripts/configure_permissions.py readonly --project .
+# The first command previews only. Add --apply to write settings.
+python /path/to/claude-dev-permissions/scripts/configure_permissions.py readonly --project . --apply
 ```
 
-## Permission Levels
+## Profiles
 
 | Capability | readonly | localdev | fulldev |
-|---|:---:|:---:|:---:|
-| git read (status/log/diff) | auto | auto | auto |
-| git local write (add/commit/merge) | confirm | **auto** | auto |
-| git remote (push/pull/fetch) | confirm | confirm | **auto** |
-| Build tools (uv/npm/make/cargo) | confirm | **auto** | auto |
-| Test runners (pytest) | confirm | **auto** | auto |
-| File ops (mkdir/cp/mv) | confirm | **auto** | auto |
-| Docker/SSH | confirm | confirm | **auto** |
-| Destructive ops (rm/reset --hard) | confirm | confirm | confirm |
+|---|---|---|---|
+| Native review (Read/Grep/Glob) | allowed | allowed | allowed |
+| Native file edits | denied | allowed in project paths | allowed in project paths |
+| Bash | denied | selected commands | selected commands |
+| Git add/commit; trusted tests/build scripts | denied | allowed | allowed |
+| Git fetch/pull | denied | ask | allowed |
+| Git push; reset/clean/rebase/checkout/branch/tag/worktree/config/remote | denied | ask | ask |
+| Python/shell interpreters, Docker, SSH and arbitrary commands | denied | no blanket allow | no blanket allow |
+| Starting permission mode | dontAsk | default (manual) | default (manual) |
 
-**Destructive operations always require confirmation**, regardless of level.
+The JSON files in `profiles/` are authoritative. `readonly` disables Bash
+completely; shell commands described as read-only can invoke helpers or write
+files. Development profiles require trusted repositories: tests, package
+scripts and git hooks can run arbitrary code, write data, or contact a network.
+`localdev` does not enforce offline operation.
 
-## How it works
+Ask rules take priority over allow rules for matching conventional command
+text. There is no broad git, interpreter, or shell allow. This cannot guarantee
+a prompt for every destructive action: an allowed script can perform one
+internally, and `git -C ... push`, aliases, full paths, or custom wrappers differ
+from `git push ...`. For filesystem/network enforcement use
+[Claude Code sandboxing](https://code.claude.com/docs/en/sandboxing) or an isolated
+container. Review [Claude Code permissions](https://code.claude.com/docs/en/permissions)
+for rule syntax, priority and the limitations of command matching.
 
-The command writes permission rules to your project's `.claude/settings.json`. Existing non-permission settings (like `enabledPlugins`) are preserved.
+## Existing settings and scope
+
+The script replaces the entire project `permissions` object, including old
+broad allow rules and `additionalDirectories`; other top-level settings are
+preserved. Malformed JSON or a symlinked destination is rejected without
+overwriting it; Windows junction/reparse destinations are also rejected.
+It previews unless `--apply` is present. It does not back up or
+commit configuration; make a private backup if previous permissions are needed.
+
+Review `/permissions` after applying a profile. Other settings, current mode,
+hooks, mods and MCP tools can change effective behavior; this project does not
+remove or audit them. Project allow rules require workspace trust. Restart if
+needed to use the new default mode. Do not enable bypass mode or grant another
+execution tool and assume readonly still fences the whole environment. Managed
+restrictions may block an intended allow. Global and local user settings are
+not modified by the script.
+
+After applying readonly, Claude cannot run the configuration script through
+Bash to switch profiles. Run it yourself in a terminal, or change settings
+through Claude Code's permission UI; the plugin must not work around its deny
+rules to change them.
+
+## Verification
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Tests cover profile invariants, permission replacement, setting preservation,
+dry runs, invalid input and unsafe destinations. They do not exercise an
+authenticated Claude session or reimplement its shell parser. See
+[HANDOFF.md](HANDOFF.md) for current state and next checks.
+
+MIT license for this repository's code and documentation. Claude Code is a
+separate product; documentation links do not imply endorsement.

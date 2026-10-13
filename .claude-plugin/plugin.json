@@ -1,8 +1,12 @@
 {
   "name": "dev-permissions",
-  "description": "Quick-setup Bash permission levels (readonly / localdev / fulldev) for Claude Code projects",
+  "description": "Explicit, reviewable project permission profiles for Claude Code",
   "author": {
     "name": "Kang Chen",
-    "email": "chenkangcs@foxmail.com"
-  }
+    "email": "26478512+queekye@users.noreply.github.com"
+  },
+  "version": "0.1.1",
+  "homepage": "https://github.com/queekye/claude-dev-permissions",
+  "repository": "https://github.com/queekye/claude-dev-permissions",
+  "license": "MIT"
 }

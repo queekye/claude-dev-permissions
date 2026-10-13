@@ -1,215 +1,31 @@
 ---
-description: Configure Bash permission levels for development workflows
-argument-hint: [level]
+description: Apply explicit project permission profiles with a preview
+argument-hint: [readonly|localdev|fulldev]
 ---
 
-Configure Bash tool permissions in the project's `.claude/settings.json` based on the user's chosen security level. This command helps quickly set up permissions on a new machine.
+Configure `.claude/settings.json` using checked-in profiles and the deterministic
+script. Do not invent or merge additional permission rules.
 
-## Permission Levels
+1. Read `${CLAUDE_PLUGIN_ROOT}/README.md` for the profiles and limitations.
+2. If `$ARGUMENTS` is empty, show the profile table and ask the user to choose.
+   Never choose fulldev automatically. Accept only readonly/localdev/fulldev;
+   reject any other argument.
+3. Preview with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/configure_permissions.py" PROFILE --project .`.
+   Use `python` instead when that is the available Python 3 interpreter.
+4. If the user requested that profile, apply the same command plus `--apply`.
+   This replaces the whole project permissions object and preserves other
+   top-level settings. Do not change global or settings.local.json files.
+5. Report profile/target path, ask the user to inspect `/permissions`, and
+   explain that a restart may be needed for the new default mode.
 
-### Level 1 - readonly (只读浏览)
+Readonly denies Bash and native write tools and uses dontAsk for unapproved
+calls. It provides native Read/Grep/Glob review, not automatic git inspection.
+Localdev/fulldev use manual default mode, selected trusted development commands,
+and ask rules for ordinary git push and risky git families. They do not
+automatically allow every git, Python, shell, Docker or SSH invocation.
 
-Suitable for: code review, reading code, browsing repos. No modifications allowed.
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(git status:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(git show:*)",
-      "Bash(git branch --list:*)",
-      "Bash(git branch -a:*)",
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "Bash(wc:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(which:*)",
-      "Bash(echo:*)"
-    ],
-    "defaultMode": "acceptEdits"
-  }
-}
-```
-
-### Level 2 - localdev (本地开发)
-
-Suitable for: daily development, refactoring, testing. All git operations are local-only (no push). This is the recommended level for most development workflows.
-
-Includes everything in Level 1, plus:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(git status:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(git show:*)",
-      "Bash(git branch:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git checkout:*)",
-      "Bash(git switch:*)",
-      "Bash(git merge:*)",
-      "Bash(git rebase:*)",
-      "Bash(git stash:*)",
-      "Bash(git worktree:*)",
-      "Bash(git tag:*)",
-      "Bash(cd:*)",
-      "Bash(mkdir:*)",
-      "Bash(cp:*)",
-      "Bash(mv:*)",
-      "Bash(touch:*)",
-      "Bash(chmod:*)",
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "Bash(wc:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(which:*)",
-      "Bash(echo:*)",
-      "Bash(uv:*)",
-      "Bash(pip:*)",
-      "Bash(python:*)",
-      "Bash(python3:*)",
-      "Bash(pytest:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(node:*)",
-      "Bash(cargo:*)",
-      "Bash(make:*)",
-      "Bash(cmake:*)",
-      "Bash(go:*)",
-      "Bash(rustc:*)",
-      "Bash(gcc:*)",
-      "Bash(g++:*)",
-      "Bash(javac:*)",
-      "Bash(java:*)",
-      "Bash(sort:*)",
-      "Bash(uniq:*)",
-      "Bash(sed:*)",
-      "Bash(awk:*)",
-      "Bash(cut:*)",
-      "Bash(tr:*)",
-      "Bash(tee:*)",
-      "Bash(diff:*)",
-      "Bash(tar:*)",
-      "Bash(unzip:*)",
-      "Bash(curl:*)",
-      "Bash(wget:*)",
-      "Bash(jq:*)"
-    ],
-    "defaultMode": "acceptEdits"
-  }
-}
-```
-
-### Level 3 - fulldev (完整开发)
-
-Suitable for: trusted environments, CI/CD integration, full autonomy. Includes remote git operations and broader system access. Use with caution.
-
-Includes everything in Level 2, plus remote git and broader tools:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(git:*)",
-      "Bash(gh:*)",
-      "Bash(cd:*)",
-      "Bash(mkdir:*)",
-      "Bash(cp:*)",
-      "Bash(mv:*)",
-      "Bash(touch:*)",
-      "Bash(chmod:*)",
-      "Bash(grep:*)",
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "Bash(wc:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(which:*)",
-      "Bash(echo:*)",
-      "Bash(uv:*)",
-      "Bash(pip:*)",
-      "Bash(python:*)",
-      "Bash(python3:*)",
-      "Bash(pytest:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(node:*)",
-      "Bash(cargo:*)",
-      "Bash(make:*)",
-      "Bash(cmake:*)",
-      "Bash(go:*)",
-      "Bash(rustc:*)",
-      "Bash(gcc:*)",
-      "Bash(g++:*)",
-      "Bash(javac:*)",
-      "Bash(java:*)",
-      "Bash(sort:*)",
-      "Bash(uniq:*)",
-      "Bash(sed:*)",
-      "Bash(awk:*)",
-      "Bash(cut:*)",
-      "Bash(tr:*)",
-      "Bash(tee:*)",
-      "Bash(diff:*)",
-      "Bash(tar:*)",
-      "Bash(unzip:*)",
-      "Bash(curl:*)",
-      "Bash(wget:*)",
-      "Bash(jq:*)",
-      "Bash(docker:*)",
-      "Bash(docker-compose:*)",
-      "Bash(kubectl:*)",
-      "Bash(ssh:*)",
-      "Bash(scp:*)",
-      "Bash(rsync:*)",
-      "WebSearch",
-      "WebFetch"
-    ],
-    "defaultMode": "acceptEdits"
-  }
-}
-```
-
-## Behavior
-
-1. If the user provides a level argument (e.g., `/setup-permissions localdev`), apply that level directly.
-2. If no argument, present the three levels with a brief comparison table and ask the user to choose.
-3. After the user chooses, write the permissions to the **project-level** settings file at `.claude/settings.json` in the current working directory.
-4. Preserve any existing non-permission settings (like `enabledPlugins`) in the file.
-5. Show a summary of what was configured and what commands are now auto-allowed vs still require confirmation.
-
-## Comparison Table (for display when no argument given)
-
-| Capability | Level 1 (readonly) | Level 2 (localdev) | Level 3 (fulldev) |
-|---|:---:|:---:|:---:|
-| git read (status/log/diff) | auto | auto | auto |
-| git local write (add/commit/merge) | confirm | auto | auto |
-| git remote (push/pull/fetch) | confirm | confirm | auto |
-| git destructive (reset --hard, -D) | confirm | confirm | confirm |
-| Build tools (uv/npm/make/cargo) | confirm | auto | auto |
-| Test runners (pytest/jest) | confirm | auto | auto |
-| File operations (mkdir/cp/mv) | confirm | auto | auto |
-| Docker/K8s | confirm | confirm | auto |
-| SSH/SCP | confirm | confirm | auto |
-| rm -rf / dangerous ops | confirm | confirm | confirm |
-
-Note: `confirm` means the user will be prompted. `auto` means auto-allowed. Destructive operations like `rm -rf`, `git reset --hard`, `git push --force` always require confirmation regardless of level — they are intentionally excluded from all levels.
-
-## Important
-
-- Never add `rm` to any auto-allow list
-- Never add `git reset --hard` or `git push --force` to auto-allow
-- Never add `git branch -D` (force delete) — only `git branch -d` (safe delete) is allowed in Level 2+
-- Level 3 uses `Bash(git:*)` which covers all git commands including push, but destructive flags still get caught by Claude's built-in safety checks
+Trusted build/test scripts can execute arbitrary code and network operations.
+Command-text rules are not a sandbox; never promise that every destructive
+operation always prompts or that a profile overrides managed policy. Other
+settings, hooks, mods and MCP tools still affect effective access. Link the
+official documentation in README when explaining these limits.
