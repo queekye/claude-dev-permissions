@@ -35,10 +35,12 @@ def configure(name, project, apply=False):
         raise ValueError("Project must be a directory")
     directory = project / ".claude"
     destination = directory / "settings.json"
-    if redirected(directory) or redirected(destination):
+    if redirected(directory):
         raise ValueError("Refusing a symlink/reparse settings destination")
     if directory.exists() and not directory.is_dir():
         raise ValueError(".claude is not a directory")
+    if redirected(destination):
+        raise ValueError("Refusing a symlink/reparse settings destination")
     original = destination.read_bytes() if destination.exists() else None
     settings = json.loads(original.decode("utf-8-sig")) if original is not None else {}
     if not isinstance(settings, dict):
